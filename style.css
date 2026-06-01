@@ -387,8 +387,14 @@ html, body {
   margin-bottom: 10px;
 }
 
+#edit-seasons .table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 #season-table {
   width: 100%;
+  min-width: 420px;
   border-collapse: separate;
   border-spacing: 0;
   border: 1px solid var(--border);
