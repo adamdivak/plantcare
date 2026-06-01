@@ -237,17 +237,18 @@ function updateActionBar() {
 
 async function waterSelected() {
   const now = new Date().toISOString();
-  for (const id of selectedIds) {
+  const wateredIds = [...selectedIds];
+  for (const id of wateredIds) {
     const plant = plants.find(p => p.id === id);
     if (plant) {
       plant.lastWatered = now;
       await put(plant);
     }
   }
-  showWateredFeedback([...selectedIds]);
   clearSelection();
   plants = await getAll();
   renderHome();
+  showWateredFeedback(wateredIds);
 }
 
 async function fertilizeSelected() {
