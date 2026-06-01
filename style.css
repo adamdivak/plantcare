@@ -1,0 +1,601 @@
+/* PlantCare/style.css */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --green: #2a9d2a;
+  --amber: #c88400;
+  --red: #e74c3c;
+  --blue: #2196F3;
+  --bg: #fafaf7;
+  --card: #fff;
+  --border: #e8e8e4;
+  --text: #333;
+  --text-secondary: #888;
+  --bar-bg: #fff;
+}
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ===== HOME SCREEN ===== */
+
+#home-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#app-header {
+  padding: 16px;
+  text-align: center;
+  background: var(--bar-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+#app-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+#plant-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  padding-bottom: 80px;
+}
+
+/* Room sections */
+.room-section {
+  margin-bottom: 20px;
+}
+
+.room-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 6px;
+}
+
+.room-header:active {
+  background: rgba(0,0,0,0.05);
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+/* Plant tiles */
+.plant-tile {
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.plant-tile-inner {
+  aspect-ratio: 1;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  border: 2.5px solid transparent;
+}
+
+.plant-tile.selected .plant-tile-inner {
+  border-color: var(--blue);
+  background: #e3f2fd;
+  box-shadow: 0 0 0 2px var(--blue);
+}
+
+.plant-tile.selected .select-check {
+  display: flex;
+}
+
+.select-check {
+  display: none;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--blue);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.plant-icon {
+  font-size: 38px;
+  line-height: 1;
+}
+
+.plant-countdown {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.countdown-green { color: var(--green); }
+.countdown-amber { color: var(--amber); }
+.countdown-red { color: var(--red); font-weight: 700; }
+.countdown-gray { color: #aaa; }
+
+.plant-badge {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 12px;
+}
+
+.plant-name {
+  font-size: 11px;
+  color: #555;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overdue .plant-tile-inner {
+  background: #fff4f4;
+  border-color: var(--red);
+}
+
+/* Watered feedback animation */
+@keyframes wateredFade {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.badge-watered {
+  animation: wateredFade 2.5s forwards;
+}
+
+/* ===== EMPTY STATE ===== */
+
+#empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-secondary);
+  padding: 40px;
+}
+
+#empty-state p {
+  font-size: 18px;
+}
+
+#empty-add-btn {
+  background: var(--blue);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ===== ACTION BAR ===== */
+
+#action-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bar-bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.action-btn {
+  background: #e0e0dc;
+  color: #999;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.action-btn:not(:disabled) {
+  background: var(--blue);
+  color: white;
+}
+
+.action-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.action-add {
+  background: var(--blue) !important;
+  color: white !important;
+  opacity: 1 !important;
+}
+
+.action-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+}
+
+@media (max-width: 400px) {
+  .action-label { display: none; }
+  .action-btn { padding: 8px 12px; }
+}
+
+/* ===== EDIT SCREEN ===== */
+
+#edit-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bar-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+#edit-header button {
+  background: none;
+  border: none;
+  font-size: 15px;
+  color: var(--blue);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+#edit-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+#edit-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Icon section */
+#edit-icon-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+#edit-icon-btn {
+  font-size: 56px;
+  background: var(--card);
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: var(--blue);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fields */
+.edit-field {
+  margin-bottom: 16px;
+}
+
+.edit-field label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.edit-field input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 16px;
+  color: var(--text);
+  outline: none;
+}
+
+.edit-field input:focus {
+  border-color: var(--blue);
+}
+
+/* Season table */
+#edit-seasons {
+  margin-bottom: 20px;
+}
+
+#edit-seasons h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+#season-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+#season-table th {
+  background: #e8e8e4;
+  padding: 8px 6px;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+  font-size: 11px;
+}
+
+#season-table th:first-child {
+  text-align: left;
+  padding-left: 10px;
+}
+
+#season-table td {
+  padding: 8px 6px;
+  text-align: center;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+}
+
+#season-table td:first-child {
+  text-align: left;
+  padding-left: 10px;
+}
+
+.summer-label {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.winter-label {
+  color: #5577aa;
+  font-weight: 600;
+}
+
+.date-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text);
+  padding: 2px;
+}
+
+.date-input:read-only {
+  color: var(--text-secondary);
+}
+
+.freq-input {
+  width: 48px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--blue);
+  background: #f0f7ff;
+}
+
+.hint {
+  font-size: 11px;
+  color: #999;
+  margin-top: 6px;
+}
+
+/* History */
+#edit-history {
+  margin-bottom: 20px;
+}
+
+#edit-history h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+#history-list {
+  background: var(--card);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.history-row {
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  border-bottom: 1px solid #f0f0ed;
+}
+
+.history-row:last-child {
+  border-bottom: none;
+}
+
+.history-label {
+  color: #555;
+}
+
+.history-value {
+  font-weight: 500;
+}
+
+/* Edit action buttons */
+#edit-actions {
+  margin-top: 8px;
+}
+
+.edit-actions-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.edit-action-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.water-btn {
+  background: var(--blue);
+  color: white;
+}
+
+.fert-btn {
+  background: var(--green);
+  color: white;
+}
+
+.secondary-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: #555;
+}
+
+.danger-btn {
+  background: var(--card);
+  border: 1px solid var(--red);
+  color: var(--red);
+}
+
+/* ===== EMOJI PICKER ===== */
+
+#emoji-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+#emoji-picker-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+}
+
+#emoji-picker-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+#emoji-picker-content h3 {
+  text-align: center;
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: #555;
+}
+
+#emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.emoji-option {
+  font-size: 32px;
+  text-align: center;
+  padding: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  background: var(--card);
+  border: none;
+  transition: background 0.1s;
+}
+
+.emoji-option:active {
+  background: #e3f2fd;
+}
