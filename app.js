@@ -313,33 +313,77 @@ function openEditScreen(plantId) {
   document.getElementById('edit-screen').hidden = false;
 }
 
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS_IN_MONTH = [31,29,31,30,31,30,31,31,30,31,30,31]; // use 29 for Feb to allow leap years
+
+function initMonthDaySelects() {
+  const monthSelects = document.querySelectorAll('.monthday-input[id$="-month"]');
+  for (const sel of monthSelects) {
+    sel.innerHTML = '';
+    for (let m = 1; m <= 12; m++) {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = MONTH_NAMES[m - 1];
+      sel.appendChild(opt);
+    }
+  }
+  const daySelects = document.querySelectorAll('.monthday-input[id$="-day"]');
+  for (const sel of daySelects) {
+    populateDaySelect(sel, 31);
+  }
+}
+
+function populateDaySelect(sel, maxDays) {
+  const current = parseInt(sel.value, 10) || 1;
+  sel.innerHTML = '';
+  for (let d = 1; d <= maxDays; d++) {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    sel.appendChild(opt);
+  }
+  sel.value = Math.min(current, maxDays);
+}
+
+function updateDaySelectForMonth(monthSelectId) {
+  const monthSel = document.getElementById(monthSelectId);
+  const daySelId = monthSelectId.replace('-month', '-day');
+  const daySel = document.getElementById(daySelId);
+  const month = parseInt(monthSel.value, 10);
+  populateDaySelect(daySel, DAYS_IN_MONTH[month - 1]);
+}
+
+function setMonthDay(prefix, month, day) {
+  document.getElementById(prefix + '-month').value = month;
+  const daySel = document.getElementById(prefix + '-day');
+  populateDaySelect(daySel, DAYS_IN_MONTH[month - 1]);
+  daySel.value = day;
+}
+
+function getMonthDay(prefix) {
+  return {
+    month: parseInt(document.getElementById(prefix + '-month').value, 10),
+    day: parseInt(document.getElementById(prefix + '-day').value, 10),
+  };
+}
+
 function populateSeasonInputs(seasons) {
   const summer = seasons.find(s => s.name === 'Summer') || seasons[0];
   const winter = seasons.find(s => s.name === 'Winter') || seasons[1];
 
-  document.getElementById('summer-start').value = formatMonthDay(summer.startMonth, summer.startDay);
-  document.getElementById('summer-end').value = toDateInputValue(summer.endMonth, summer.endDay);
+  setMonthDay('summer-start', summer.startMonth, summer.startDay);
+  setMonthDay('summer-end', summer.endMonth, summer.endDay);
   document.getElementById('summer-water').value = summer.waterDays;
   document.getElementById('summer-fert').value = summer.fertilizerDays;
 
-  document.getElementById('winter-start').value = formatMonthDay(winter.startMonth, winter.startDay);
-  document.getElementById('winter-end').value = toDateInputValue(winter.endMonth, winter.endDay);
+  setMonthDay('winter-start', winter.startMonth, winter.startDay);
+  setMonthDay('winter-end', winter.endMonth, winter.endDay);
   document.getElementById('winter-water').value = winter.waterDays;
   document.getElementById('winter-fert').value = winter.fertilizerDays;
 }
 
 function formatMonthDay(month, day) {
-  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return `${monthNames[month - 1]} ${day}`;
-}
-
-function toDateInputValue(month, day) {
-  return `2024-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-}
-
-function parseDateInput(value) {
-  const parts = value.split('-');
-  return { month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) };
+  return `${MONTH_NAMES[month - 1]} ${day}`;
 }
 
 function nextDay(month, day) {
@@ -356,10 +400,10 @@ function collectPlantFromForm() {
   plant.icon = document.getElementById('edit-icon-display').textContent;
   plant.roomName = document.getElementById('edit-room').value.trim();
 
-  const summerEnd = parseDateInput(document.getElementById('summer-end').value);
-  const winterEnd = parseDateInput(document.getElementById('winter-end').value);
-  const summerStart = nextDay(winterEnd.month, winterEnd.day);
-  const winterStart = nextDay(summerEnd.month, summerEnd.day);
+  const summerStart = getMonthDay('summer-start');
+  const summerEnd = getMonthDay('summer-end');
+  const winterStart = getMonthDay('winter-start');
+  const winterEnd = getMonthDay('winter-end');
 
   plant.seasons = [
     {
@@ -464,18 +508,53 @@ function closeEmojiPicker() {
 
 // ===== SEASON AUTO-ADJUST =====
 
-function setupSeasonListeners() {
-  document.getElementById('summer-end').addEventListener('change', (e) => {
-    const { month, day } = parseDateInput(e.target.value);
-    const next = nextDay(month, day);
-    document.getElementById('winter-start').value = formatMonthDay(next.month, next.day);
-  });
+function prevDay(month, day) {
+  const d = new Date(2024, month - 1, day);
+  d.setDate(d.getDate() - 1);
+  return { month: d.getMonth() + 1, day: d.getDate() };
+}
 
-  document.getElementById('winter-end').addEventListener('change', (e) => {
-    const { month, day } = parseDateInput(e.target.value);
+function setupSeasonListeners() {
+  // Update day options when month changes
+  for (const id of ['summer-start-month','summer-end-month','winter-start-month','winter-end-month']) {
+    document.getElementById(id).addEventListener('change', () => updateDaySelectForMonth(id));
+  }
+
+  // Summer end changed → adjust winter start to next day
+  const summerEndChanged = () => {
+    const { month, day } = getMonthDay('summer-end');
     const next = nextDay(month, day);
-    document.getElementById('summer-start').value = formatMonthDay(next.month, next.day);
-  });
+    setMonthDay('winter-start', next.month, next.day);
+  };
+  document.getElementById('summer-end-month').addEventListener('change', summerEndChanged);
+  document.getElementById('summer-end-day').addEventListener('change', summerEndChanged);
+
+  // Winter end changed → adjust summer start to next day
+  const winterEndChanged = () => {
+    const { month, day } = getMonthDay('winter-end');
+    const next = nextDay(month, day);
+    setMonthDay('summer-start', next.month, next.day);
+  };
+  document.getElementById('winter-end-month').addEventListener('change', winterEndChanged);
+  document.getElementById('winter-end-day').addEventListener('change', winterEndChanged);
+
+  // Summer start changed → adjust winter end to previous day
+  const summerStartChanged = () => {
+    const { month, day } = getMonthDay('summer-start');
+    const prev = prevDay(month, day);
+    setMonthDay('winter-end', prev.month, prev.day);
+  };
+  document.getElementById('summer-start-month').addEventListener('change', summerStartChanged);
+  document.getElementById('summer-start-day').addEventListener('change', summerStartChanged);
+
+  // Winter start changed → adjust summer end to previous day
+  const winterStartChanged = () => {
+    const { month, day } = getMonthDay('winter-start');
+    const prev = prevDay(month, day);
+    setMonthDay('summer-end', prev.month, prev.day);
+  };
+  document.getElementById('winter-start-month').addEventListener('change', winterStartChanged);
+  document.getElementById('winter-start-day').addEventListener('change', winterStartChanged);
 }
 
 // ===== DUPLICATE & DELETE =====
@@ -523,6 +602,9 @@ async function fertilizeNow() {
 // ===== EVENT WIRING =====
 
 function init() {
+  // Initialize month/day dropdowns
+  initMonthDaySelects();
+
   // Action bar
   document.getElementById('btn-water').addEventListener('click', waterSelected);
   document.getElementById('btn-fertilize').addEventListener('click', fertilizeSelected);

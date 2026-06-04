@@ -439,18 +439,14 @@ html, body {
   font-weight: 600;
 }
 
-.date-input {
-  width: 100%;
-  border: none;
-  background: transparent;
-  text-align: center;
+.monthday-input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
   font-size: 13px;
   color: var(--text);
-  padding: 2px;
-}
-
-.date-input:read-only {
-  color: var(--text-secondary);
+  padding: 3px 2px;
+  cursor: pointer;
 }
 
 .freq-input {
