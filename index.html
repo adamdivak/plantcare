@@ -20,6 +20,13 @@
       <button id="version-btn" class="version-btn" title="Tap to check for updates"></button>
     </header>
 
+    <!-- Install / Add-to-Home-Screen banner (hidden until installable & not yet installed) -->
+    <div id="install-banner" hidden>
+      <span class="install-text">📲 Add PlantCare to your home screen</span>
+      <button id="install-btn" type="button">Add</button>
+      <button id="install-dismiss" type="button" aria-label="Dismiss">✕</button>
+    </div>
+
     <main id="plant-grid"></main>
 
     <div id="empty-state" hidden>
@@ -154,6 +161,27 @@
           <button id="btn-delete" class="edit-action-btn danger-btn">🗑 Delete</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- iOS "Add to Home Screen" instructions (iOS has no install API) -->
+  <div id="ios-install-sheet" hidden>
+    <div id="ios-install-backdrop"></div>
+    <div id="ios-install-content">
+      <h3>Add to Home Screen</h3>
+      <ol class="ios-steps">
+        <li>
+          Tap the <strong>Share</strong> button
+          <svg class="ios-share-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v11M12 3l-3.5 3.5M12 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6.5 10H5.5a1.5 1.5 0 0 0-1.5 1.5v7A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 18.5 10h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          in Safari's toolbar.
+        </li>
+        <li>Scroll down and choose <strong>“Add to Home Screen”</strong>.</li>
+        <li>Tap <strong>Add</strong> — done!</li>
+      </ol>
+      <button id="ios-install-close" type="button">Got it</button>
     </div>
   </div>
 

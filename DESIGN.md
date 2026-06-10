@@ -8,7 +8,7 @@ reflects what is **actually built** (which has grown past the original spec).
 
 ## Status
 
-Shipped and in personal use as an installed PWA on iPhone. Current release: **v5**.
+Shipped and in personal use as an installed PWA on iPhone. Current release: **v6**.
 
 ## Where the code lives & how it's deployed
 
@@ -120,6 +120,13 @@ tile, a pulse ring, and a short Web Audio chime.
   the manual "refresh", since standalone PWAs have no pull-to-refresh.
 - The **home-screen icon is cached by iOS at install time**; to change it you must remove and
   re-add the home-screen tile.
+- **Install banner (v6)** — a dismissible "Add PlantCare to your home screen" bar shows below
+  the header for non-installed visitors. On **Chromium** (Android/desktop) it captures the
+  `beforeinstallprompt` event and the Add button triggers a real one-tap install. **iOS Safari
+  exposes no install API**, so there the Add button opens an instructions sheet pointing at the
+  Share → "Add to Home Screen" flow. The banner hides when already running standalone
+  (`display-mode: standalone` / `navigator.standalone`), on `appinstalled`, or once dismissed
+  (remembered in `localStorage` key `plantcare-install-dismissed`).
 
 ## Decisions worth remembering
 

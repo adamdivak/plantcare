@@ -3,7 +3,7 @@
 import { getAll, get, put, del } from './db.js';
 
 // Bump this together with CACHE_NAME in sw.js on each release.
-const APP_VERSION = '5';
+const APP_VERSION = '6';
 
 // ===== STATE =====
 
@@ -982,6 +982,9 @@ function init() {
   versionBtn.textContent = 'v' + APP_VERSION;
   versionBtn.addEventListener('click', checkForUpdates);
 
+  // Install / Add-to-Home-Screen banner
+  setupInstall();
+
   // Context menu (long-press / right-click)
   buildContextMenu();
   document.getElementById('plant-grid').addEventListener('scroll', closeContextMenu, { passive: true });
@@ -989,6 +992,71 @@ function init() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeContextMenu();
   });
+}
+
+// ===== INSTALL (Add to Home Screen) =====
+
+let deferredInstallPrompt = null;
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+}
+
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent)
+    // iPadOS 13+ reports as desktop Safari but has touch
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function setupInstall() {
+  const banner = document.getElementById('install-banner');
+  const installBtn = document.getElementById('install-btn');
+  const dismissBtn = document.getElementById('install-dismiss');
+
+  // Already running as an installed app, or the user dismissed the banner before.
+  if (isStandalone() || localStorage.getItem('plantcare-install-dismissed') === '1') return;
+
+  // Chromium (Android / desktop) fires this when the PWA is installable. Capture
+  // it so the button can trigger a real one-tap install.
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    banner.hidden = false;
+  });
+
+  // iOS Safari has no install API — show the banner anyway and route to instructions.
+  if (isIOS()) banner.hidden = false;
+
+  installBtn.addEventListener('click', async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      if (outcome === 'accepted') banner.hidden = true;
+    } else if (isIOS()) {
+      document.getElementById('ios-install-sheet').hidden = false;
+    }
+  });
+
+  dismissBtn.addEventListener('click', () => {
+    banner.hidden = true;
+    localStorage.setItem('plantcare-install-dismissed', '1');
+  });
+
+  // Once actually installed, hide and don't nag again.
+  window.addEventListener('appinstalled', () => {
+    banner.hidden = true;
+    localStorage.setItem('plantcare-install-dismissed', '1');
+  });
+
+  // iOS instructions sheet dismissal
+  document.getElementById('ios-install-backdrop').addEventListener('click', closeIosSheet);
+  document.getElementById('ios-install-close').addEventListener('click', closeIosSheet);
+}
+
+function closeIosSheet() {
+  document.getElementById('ios-install-sheet').hidden = true;
 }
 
 // ===== BOOT =====

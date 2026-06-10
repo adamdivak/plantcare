@@ -720,6 +720,112 @@ input, textarea {
   background: #e3f2fd;
 }
 
+/* ===== INSTALL BANNER ===== */
+
+#install-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #e3f2fd;
+  border-bottom: 1px solid var(--border);
+}
+
+.install-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1565c0;
+}
+
+#install-btn {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#install-btn:active { background: #1976d2; }
+
+#install-dismiss {
+  background: none;
+  border: none;
+  color: #6b8fb0;
+  font-size: 15px;
+  line-height: 1;
+  padding: 6px;
+  cursor: pointer;
+}
+
+/* iOS instructions sheet */
+#ios-install-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+}
+
+#ios-install-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+}
+
+#ios-install-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
+}
+
+#ios-install-content h3 {
+  text-align: center;
+  font-size: 17px;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.ios-steps {
+  list-style: decimal;
+  padding-left: 22px;
+  margin-bottom: 20px;
+}
+
+.ios-steps li {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #444;
+}
+
+.ios-share-icon {
+  width: 18px;
+  height: 18px;
+  vertical-align: -4px;
+  color: var(--blue);
+  margin: 0 1px;
+}
+
+#ios-install-close {
+  display: block;
+  width: 100%;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#ios-install-close:active { background: #1976d2; }
+
 /* ===== TOAST ===== */
 
 #toast {
