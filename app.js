@@ -223,6 +223,9 @@ function attachTileGestures(tile, plant) {
     lpTimer = setTimeout(() => {
       suppressClick = true;
       tile.classList.remove('pressing');
+      // Clear any text selection iOS may have started during the press
+      const sel = window.getSelection && window.getSelection();
+      if (sel && sel.removeAllRanges) sel.removeAllRanges();
       if (navigator.vibrate) navigator.vibrate(10);
       openContextMenu(plant, lpStartX, lpStartY);
     }, 500);
@@ -773,7 +776,8 @@ async function duplicatePlant() {
 
 async function deletePlant() {
   if (!editingPlantId) return;
-  if (!confirm('Delete this plant?')) return;
+  const plant = plants.find(p => p.id === editingPlantId);
+  if (!confirm(`Delete ${plant && plant.name ? plant.name : 'this plant'}?`)) return;
   await del(editingPlantId);
   plants = await getAll();
   closeEditScreen();
