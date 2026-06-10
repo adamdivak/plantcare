@@ -236,9 +236,10 @@ function updateActionBar() {
 // ===== ACTIONS =====
 
 async function waterSelected() {
+  const ids = [...selectedIds];
+  if (ids.length === 0) return;
   const now = new Date().toISOString();
-  const wateredIds = [...selectedIds];
-  for (const id of wateredIds) {
+  for (const id of ids) {
     const plant = plants.find(p => p.id === id);
     if (plant) {
       plant.lastWatered = now;
@@ -248,12 +249,14 @@ async function waterSelected() {
   clearSelection();
   plants = await getAll();
   renderHome();
-  showWateredFeedback(wateredIds);
+  applyCareFeedback(ids, 'water');
 }
 
 async function fertilizeSelected() {
+  const ids = [...selectedIds];
+  if (ids.length === 0) return;
   const now = new Date().toISOString();
-  for (const id of selectedIds) {
+  for (const id of ids) {
     const plant = plants.find(p => p.id === id);
     if (plant) {
       plant.lastFertilized = now;
@@ -263,17 +266,81 @@ async function fertilizeSelected() {
   clearSelection();
   plants = await getAll();
   renderHome();
+  applyCareFeedback(ids, 'fertilize');
 }
 
-function showWateredFeedback(ids) {
+// ===== FEEDBACK (toast + animation + sound) =====
+
+function applyCareFeedback(ids, type) {
+  const isWater = type === 'water';
+  const emoji = isWater ? '💧' : '🧪';
+  const verb = isWater ? 'Watered' : 'Fertilized';
+  const pulseClass = isWater ? 'care-pulse' : 'care-pulse-green';
+
   for (const id of ids) {
     const tile = document.querySelector(`.plant-tile[data-id="${id}"]`);
     if (!tile) continue;
     const inner = tile.querySelector('.plant-tile-inner');
-    const badge = document.createElement('div');
-    badge.className = 'plant-badge badge-watered';
-    badge.textContent = '💧';
-    inner.appendChild(badge);
+
+    const float = document.createElement('div');
+    float.className = 'care-float';
+    float.textContent = emoji;
+    inner.appendChild(float);
+    float.addEventListener('animationend', () => float.remove());
+
+    tile.classList.add(pulseClass);
+    setTimeout(() => tile.classList.remove(pulseClass), 700);
+  }
+
+  const noun = ids.length === 1 ? 'plant' : 'plants';
+  showToast(`${emoji} ${verb} ${ids.length} ${noun}`);
+  playChime(isWater);
+}
+
+let toastTimer = null;
+function showToast(message) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  // Force reflow so re-triggering the transition works
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+let audioCtx = null;
+function playChime(isWater) {
+  try {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    // A gentle two-note "cling"
+    const notes = isWater ? [880, 1320] : [660, 990];
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const start = now + i * 0.08;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.18, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(start);
+      osc.stop(start + 0.4);
+    });
+  } catch (e) {
+    /* sound is best-effort; ignore failures */
   }
 }
 
@@ -285,18 +352,14 @@ function openEditScreen(plantId) {
 
   document.getElementById('edit-title').textContent = plantId ? 'Edit Plant' : 'New Plant';
   document.getElementById('edit-icon-display').textContent = plant.icon;
-  document.getElementById('edit-name').value = plant.name;
-  document.getElementById('edit-room').value = plant.roomName;
 
-  // Populate room suggestions
-  const datalist = document.getElementById('room-suggestions');
-  datalist.innerHTML = '';
-  const rooms = [...new Set(plants.map(p => p.roomName).filter(Boolean))];
-  for (const room of rooms) {
-    const opt = document.createElement('option');
-    opt.value = room;
-    datalist.appendChild(opt);
-  }
+  const nameInput = document.getElementById('edit-name');
+  const roomInput = document.getElementById('edit-room');
+  nameInput.value = plant.name;
+  roomInput.value = plant.roomName;
+  nameInput.classList.remove('field-error');
+  roomInput.classList.remove('field-error');
+  hideRoomSuggestions();
 
   // Populate seasons
   populateSeasonInputs(plant.seasons);
@@ -311,6 +374,64 @@ function openEditScreen(plantId) {
   document.getElementById('btn-fert-now').style.display = plantId ? '' : 'none';
 
   document.getElementById('edit-screen').hidden = false;
+}
+
+// ===== ROOM AUTOCOMPLETE =====
+
+function existingRooms() {
+  return [...new Set(plants.map(p => p.roomName).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b)
+  );
+}
+
+function renderRoomSuggestions() {
+  const input = document.getElementById('edit-room');
+  const box = document.getElementById('room-suggestions');
+  const typed = input.value.trim().toLowerCase();
+
+  const matches = existingRooms().filter((room) => {
+    const r = room.toLowerCase();
+    return r !== typed && r.includes(typed);
+  });
+
+  if (matches.length === 0) {
+    hideRoomSuggestions();
+    return;
+  }
+
+  box.innerHTML = '';
+  for (const room of matches) {
+    const item = document.createElement('div');
+    item.className = 'suggestion-item';
+    item.textContent = room;
+    // Use mousedown/touchstart so it fires before the input's blur
+    item.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      input.value = room;
+      hideRoomSuggestions();
+    });
+    box.appendChild(item);
+  }
+  box.hidden = false;
+}
+
+function hideRoomSuggestions() {
+  const box = document.getElementById('room-suggestions');
+  box.hidden = true;
+  box.innerHTML = '';
+}
+
+function setupRoomAutocomplete() {
+  const input = document.getElementById('edit-room');
+  input.addEventListener('focus', renderRoomSuggestions);
+  input.addEventListener('input', () => {
+    input.classList.remove('field-error');
+    renderRoomSuggestions();
+  });
+  input.addEventListener('blur', () => {
+    // Delay so a tap on a suggestion registers first
+    setTimeout(hideRoomSuggestions, 150);
+  });
 }
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -429,7 +550,34 @@ function collectPlantFromForm() {
   return plant;
 }
 
+function validatePlantForm() {
+  const nameInput = document.getElementById('edit-name');
+  const roomInput = document.getElementById('edit-room');
+  const name = nameInput.value.trim();
+  const room = roomInput.value.trim();
+
+  nameInput.classList.toggle('field-error', !name);
+  roomInput.classList.toggle('field-error', !room);
+
+  if (!name && !room) {
+    showToast('Please add a name and a room');
+    return false;
+  }
+  if (!name) {
+    showToast('Please give the plant a name');
+    nameInput.focus();
+    return false;
+  }
+  if (!room) {
+    showToast('Please choose a room');
+    roomInput.focus();
+    return false;
+  }
+  return true;
+}
+
 async function savePlant() {
+  if (!validatePlantForm()) return;
   const plant = collectPlantFromForm();
   if (plant.roomName) lastUsedRoom = plant.roomName;
   await put(plant);
@@ -560,6 +708,7 @@ function setupSeasonListeners() {
 // ===== DUPLICATE & DELETE =====
 
 async function duplicatePlant() {
+  if (!validatePlantForm()) return;
   const plant = collectPlantFromForm();
   const dup = { ...plant, id: generateId(), name: plant.name + ' (copy)', lastWatered: null, lastFertilized: null, createdAt: new Date().toISOString() };
   await put(dup);
@@ -627,6 +776,9 @@ function init() {
 
   // Emoji picker
   document.getElementById('emoji-picker-backdrop').addEventListener('click', closeEmojiPicker);
+
+  // Room autocomplete
+  setupRoomAutocomplete();
 
   // Season auto-adjust
   setupSeasonListeners();

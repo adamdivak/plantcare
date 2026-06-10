@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#2196F3">
@@ -70,42 +70,68 @@
       </div>
       <div class="edit-field">
         <label for="edit-room">Room</label>
-        <input type="text" id="edit-room" placeholder="e.g. Living Room" list="room-suggestions">
-        <datalist id="room-suggestions"></datalist>
+        <div class="autocomplete-wrap">
+          <input type="text" id="edit-room" placeholder="e.g. Living Room" autocomplete="off" autocapitalize="words" autocorrect="off">
+          <div id="room-suggestions" class="suggestions" hidden></div>
+        </div>
       </div>
 
-      <!-- Season schedule table -->
+      <!-- Season schedule -->
       <div id="edit-seasons">
         <h3>Care Schedule</h3>
-        <div class="table-wrap">
-        <table id="season-table">
-          <thead>
-            <tr>
-              <th>Season</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>💧 days</th>
-              <th>🧪 days</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr id="season-summer">
-              <td class="season-label summer-label">☀️ Summer</td>
-              <td><select class="monthday-input" id="summer-start-month"></select> <select class="monthday-input" id="summer-start-day"></select></td>
-              <td><select class="monthday-input" id="summer-end-month"></select> <select class="monthday-input" id="summer-end-day"></select></td>
-              <td><input type="number" class="freq-input" id="summer-water" min="0" value="7"></td>
-              <td><input type="number" class="freq-input" id="summer-fert" min="0" value="14"></td>
-            </tr>
-            <tr id="season-winter">
-              <td class="season-label winter-label">❄️ Winter</td>
-              <td><select class="monthday-input" id="winter-start-month"></select> <select class="monthday-input" id="winter-start-day"></select></td>
-              <td><select class="monthday-input" id="winter-end-month"></select> <select class="monthday-input" id="winter-end-day"></select></td>
-              <td><input type="number" class="freq-input" id="winter-water" min="0" value="14"></td>
-              <td><input type="number" class="freq-input" id="winter-fert" min="0" value="0"></td>
-            </tr>
-          </tbody>
-        </table>
+
+        <div class="season-card">
+          <div class="season-title summer-label">☀️ Summer</div>
+          <div class="season-row">
+            <span class="season-row-label">Start</span>
+            <span class="md-pair">
+              <select class="monthday-input" id="summer-start-month"></select>
+              <select class="monthday-input" id="summer-start-day"></select>
+            </span>
+          </div>
+          <div class="season-row">
+            <span class="season-row-label">End</span>
+            <span class="md-pair">
+              <select class="monthday-input" id="summer-end-month"></select>
+              <select class="monthday-input" id="summer-end-day"></select>
+            </span>
+          </div>
+          <div class="season-row">
+            <span class="season-row-label">💧 Water</span>
+            <span class="freq-pair">every <input type="number" class="freq-input" id="summer-water" min="0" value="7"> days</span>
+          </div>
+          <div class="season-row">
+            <span class="season-row-label">🧪 Fertilizer</span>
+            <span class="freq-pair">every <input type="number" class="freq-input" id="summer-fert" min="0" value="14"> days</span>
+          </div>
         </div>
+
+        <div class="season-card">
+          <div class="season-title winter-label">❄️ Winter</div>
+          <div class="season-row">
+            <span class="season-row-label">Start</span>
+            <span class="md-pair">
+              <select class="monthday-input" id="winter-start-month"></select>
+              <select class="monthday-input" id="winter-start-day"></select>
+            </span>
+          </div>
+          <div class="season-row">
+            <span class="season-row-label">End</span>
+            <span class="md-pair">
+              <select class="monthday-input" id="winter-end-month"></select>
+              <select class="monthday-input" id="winter-end-day"></select>
+            </span>
+          </div>
+          <div class="season-row">
+            <span class="season-row-label">💧 Water</span>
+            <span class="freq-pair">every <input type="number" class="freq-input" id="winter-water" min="0" value="14"> days</span>
+          </div>
+          <div class="season-row">
+            <span class="season-row-label">🧪 Fertilizer</span>
+            <span class="freq-pair">every <input type="number" class="freq-input" id="winter-fert" min="0" value="0"> days</span>
+          </div>
+        </div>
+
         <p class="hint">Changing a date auto-adjusts the other season. Set 0 for no care needed.</p>
       </div>
 
