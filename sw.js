@@ -1,4 +1,4 @@
-const CACHE_NAME = 'plantcare-v4';
+const CACHE_NAME = 'plantcare-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   './app.js',
   './db.js',
   './manifest.json',
+  './icon-180.png',
   './icon-192.png',
   './icon-512.png',
 ];

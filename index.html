@@ -9,13 +9,15 @@
   <title>PlantCare</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
 </head>
 <body>
   <!-- Home Screen -->
   <div id="home-screen">
     <header id="app-header">
       <h1>PlantCare</h1>
+      <button id="version-btn" class="version-btn" title="Tap to check for updates"></button>
     </header>
 
     <main id="plant-grid"></main>
@@ -167,7 +169,20 @@
   <script type="module" src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
+      // If a SW already controls this page, a controllerchange means a new
+      // version activated — reload once to pick it up.
+      const hadController = !!navigator.serviceWorker.controller;
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!hadController || refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        reg.update();
+        // Re-check for a new version periodically while the app stays open
+        setInterval(() => reg.update(), 60 * 60 * 1000);
+      });
     }
   </script>
 </body>

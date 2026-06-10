@@ -2,6 +2,9 @@
 
 import { getAll, get, put, del } from './db.js';
 
+// Bump this together with CACHE_NAME in sw.js on each release.
+const APP_VERSION = '5';
+
 // ===== STATE =====
 
 let plants = [];
@@ -922,6 +925,23 @@ async function deletePlantById(id) {
   renderHome();
 }
 
+// ===== UPDATES =====
+
+async function checkForUpdates() {
+  showToast('Checking for updates…');
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) await reg.update();
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  // If a new version activated, controllerchange reloads us to it.
+  // Otherwise this reload just refreshes the current (latest) version.
+  setTimeout(() => window.location.reload(), 700);
+}
+
 // ===== EVENT WIRING =====
 
 function init() {
@@ -956,6 +976,11 @@ function init() {
 
   // Season auto-adjust
   setupSeasonListeners();
+
+  // Version label + tap-to-update
+  const versionBtn = document.getElementById('version-btn');
+  versionBtn.textContent = 'v' + APP_VERSION;
+  versionBtn.addEventListener('click', checkForUpdates);
 
   // Context menu (long-press / right-click)
   buildContextMenu();
