@@ -186,9 +186,62 @@ function createPlantTile(plant) {
     <div class="plant-name">${plant.name || 'Unnamed'}</div>
   `;
 
-  tile.addEventListener('click', () => toggleSelection(plant.id));
+  attachTileGestures(tile, plant);
 
   return tile;
+}
+
+// ===== TILE GESTURES (tap select + long-press / right-click menu) =====
+
+let lpTimer = null;
+let lpStartX = 0;
+let lpStartY = 0;
+let suppressClick = false;
+
+function attachTileGestures(tile, plant) {
+  // Tap toggles selection (unless a long-press just fired)
+  tile.addEventListener('click', () => {
+    if (suppressClick) { suppressClick = false; return; }
+    toggleSelection(plant.id);
+  });
+
+  // Right-click (desktop) opens the context menu
+  tile.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    openContextMenu(plant, e.clientX, e.clientY);
+  });
+
+  // Long-press (touch) opens the context menu
+  tile.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    lpStartX = t.clientX;
+    lpStartY = t.clientY;
+    suppressClick = false;
+    tile.classList.add('pressing');
+    clearTimeout(lpTimer);
+    lpTimer = setTimeout(() => {
+      suppressClick = true;
+      tile.classList.remove('pressing');
+      if (navigator.vibrate) navigator.vibrate(10);
+      openContextMenu(plant, lpStartX, lpStartY);
+    }, 500);
+  }, { passive: true });
+
+  tile.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    if (Math.abs(t.clientX - lpStartX) > 10 || Math.abs(t.clientY - lpStartY) > 10) {
+      clearTimeout(lpTimer);
+      tile.classList.remove('pressing');
+    }
+  }, { passive: true });
+
+  const endPress = () => {
+    clearTimeout(lpTimer);
+    tile.classList.remove('pressing');
+  };
+  tile.addEventListener('touchend', endPress);
+  tile.addEventListener('touchcancel', endPress);
 }
 
 // ===== SELECTION =====
@@ -748,6 +801,123 @@ async function fertilizeNow() {
   renderHistory(plant);
 }
 
+// ===== CONTEXT MENU =====
+
+const CONTEXT_ACTIONS = [
+  { action: 'water', label: '💧 Water' },
+  { action: 'fertilize', label: '🧪 Fertilize' },
+  { action: 'edit', label: '✏️ Edit' },
+  { action: 'duplicate', label: '📋 Duplicate' },
+  { action: 'delete', label: '🗑 Delete', danger: true },
+];
+
+function buildContextMenu() {
+  const backdrop = document.createElement('div');
+  backdrop.id = 'context-menu-backdrop';
+  backdrop.hidden = true;
+  backdrop.addEventListener('click', closeContextMenu);
+  backdrop.addEventListener('contextmenu', (e) => { e.preventDefault(); closeContextMenu(); });
+  document.body.appendChild(backdrop);
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.hidden = true;
+  document.body.appendChild(menu);
+}
+
+function openContextMenu(plant, x, y) {
+  const menu = document.getElementById('context-menu');
+  const backdrop = document.getElementById('context-menu-backdrop');
+
+  menu.innerHTML = '';
+  const title = document.createElement('div');
+  title.className = 'ctx-title';
+  title.textContent = plant.name || 'Unnamed';
+  menu.appendChild(title);
+
+  for (const it of CONTEXT_ACTIONS) {
+    const btn = document.createElement('button');
+    btn.className = 'ctx-item' + (it.danger ? ' ctx-danger' : '');
+    btn.textContent = it.label;
+    btn.addEventListener('click', () => {
+      closeContextMenu();
+      handleContextAction(it.action, plant.id);
+    });
+    menu.appendChild(btn);
+  }
+
+  backdrop.hidden = false;
+  menu.hidden = false;
+
+  // Position near the tap point, clamped to the viewport
+  const pad = 8;
+  const w = menu.offsetWidth;
+  const h = menu.offsetHeight;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  let left = x;
+  let top = y;
+  if (left + w + pad > vw) left = vw - w - pad;
+  if (left < pad) left = pad;
+  if (top + h + pad > vh) top = Math.max(pad, y - h);
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+}
+
+function closeContextMenu() {
+  document.getElementById('context-menu').hidden = true;
+  document.getElementById('context-menu-backdrop').hidden = true;
+}
+
+function handleContextAction(action, id) {
+  switch (action) {
+    case 'water': careForPlant(id, 'water'); break;
+    case 'fertilize': careForPlant(id, 'fertilize'); break;
+    case 'edit': openEditScreen(id); break;
+    case 'duplicate': duplicatePlantById(id); break;
+    case 'delete': deletePlantById(id); break;
+  }
+}
+
+async function careForPlant(id, type) {
+  const plant = plants.find(p => p.id === id);
+  if (!plant) return;
+  if (type === 'water') plant.lastWatered = new Date().toISOString();
+  else plant.lastFertilized = new Date().toISOString();
+  await put(plant);
+  plants = await getAll();
+  renderHome();
+  applyCareFeedback([id], type);
+}
+
+async function duplicatePlantById(id) {
+  const plant = plants.find(p => p.id === id);
+  if (!plant) return;
+  const dup = {
+    ...plant,
+    id: generateId(),
+    name: plant.name + ' (copy)',
+    lastWatered: null,
+    lastFertilized: null,
+    createdAt: new Date().toISOString(),
+  };
+  await put(dup);
+  plants = await getAll();
+  clearSelection();
+  renderHome();
+  showToast('📋 Duplicated ' + plant.name);
+}
+
+async function deletePlantById(id) {
+  const plant = plants.find(p => p.id === id);
+  if (!plant) return;
+  if (!confirm(`Delete ${plant.name || 'this plant'}?`)) return;
+  await del(id);
+  plants = await getAll();
+  selectedIds.delete(id);
+  renderHome();
+}
+
 // ===== EVENT WIRING =====
 
 function init() {
@@ -782,6 +952,14 @@ function init() {
 
   // Season auto-adjust
   setupSeasonListeners();
+
+  // Context menu (long-press / right-click)
+  buildContextMenu();
+  document.getElementById('plant-grid').addEventListener('scroll', closeContextMenu, { passive: true });
+  window.addEventListener('resize', closeContextMenu);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeContextMenu();
+  });
 }
 
 // ===== BOOT =====
